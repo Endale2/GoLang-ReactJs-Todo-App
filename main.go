@@ -1,19 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ToDo struct {
-	ID        int    `json:"id"`
+	ID        int    `json:"id" bson:"_id"`
 	Completed bool   `json:"completed"`
 	Body      string `json:"body"`
 }
+
+var collection *mongo.Collection
 
 func main() {
 	app := fiber.New()
@@ -22,59 +27,27 @@ func main() {
 		log.Fatal("Error loading .env")
 	}
 
-	PORT := os.Getenv("PORT")
-
-	todos := []ToDo{}
+	//get todos
 
 	app.Get("/api/todos", func(c *fiber.Ctx) error {
-		return c.Status(200).JSON(todos)
+		return c.Status(200).JSON("Hello World")
 	})
 
-	//create Todo
-	app.Post("/api/todos", func(c *fiber.Ctx) error {
-		todo := &ToDo{}
-		err := c.BodyParser(todo)
-		if err != nil {
-			return err
-		}
-		if todo.Body == "" {
-			return c.Status(400).JSON(fiber.Map{"message": "body field is required"})
-		}
-		todo.ID = len(todos) + 1
-		todos = append(todos, *todo)
+	PORT := os.Getenv("PORT")
+	MONGO_URI := os.Getenv("MONGO_URI")
+	clientOptions := options.Client().ApplyURI(MONGO_URI)
+	client, err := mongo.Connect(context.Background(), clientOptions)
 
-		return c.Status(201).JSON(fiber.Map{"message": "todo successfully created", "todo": todo})
-	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	//Update Todos
+	err = client.Ping(context.Background(), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	app.Patch("api/todos/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-
-		for i, todo := range todos {
-			if fmt.Sprint(todo.ID) == id {
-				todos[i].Completed = true
-
-				return c.Status(200).JSON(todos[i])
-			}
-		}
-
-		return c.Status(404).JSON("todo not found")
-	})
-
-	//delete todo
-
-	app.Delete("/api/todos/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		for i, todo := range todos {
-			if fmt.Sprint(todo.ID) == id {
-				todos = append(todos[:i], todos[i+1:]...)
-				return c.Status(200).JSON(fiber.Map{"message": "Successfully deleted"})
-			}
-		}
-
-		return c.Status(404).JSON("Not Found")
-	})
+	fmt.Println("Connected to mongodb")
 
 	app.Listen(":" + PORT)
 }
