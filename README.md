@@ -5,7 +5,6 @@ A simple and efficient **Daily ToDo App** built using the **Go Fiber** framework
 ## 🚀 Features
 
 - **Add New Tasks:** Quickly add new tasks for the day.
-- **Edit Tasks:** Update task details in a flash.
 - **Delete Tasks:** Remove tasks once they are completed, using a dedicated delete button.
 - **Real-Time Updates:** Enjoy an intuitive interface for easy task management.
 
